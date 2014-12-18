@@ -1,0 +1,259 @@
+---
+title: "R Evaluation Exercises"
+author: "Mark Rios"
+date: "December 15, 2014"
+output: html_document
+---
+
+
+1. Create a function that takes in a vector of numbers V.Size and a single number N as inputs and outputs a list object of size N where each entry is a vector that contains a elements of V.Size such that the largest element in V.Size is in the vector of the first list item, the second largest element in V.Size is in the vector of the second list item, etc.  The (N+1) ordered value of V.Size should be in the first vector of the list, the (N+2) ordered value of V.Size should be in the second vector of the list as so on.
+
+**Assumptions**
+
+1. **N** must be less than half the vector's length
+
+2. **N** is assumed to greater than 1
+
+3. **N** must be an integer
+
+SOLUTION:
+
+```{r}
+
+orderFcn <- function(v,n)
+{
+  
+          validate <- function (v,n)
+          {
+                  pass <- FALSE
+                  
+                  if( n > .5*length(v)) stop("error: n must be less than half the length of the vector")
+                  if( n < 1 ) stop("error: n must be greater than 1")
+                  if( n%%1 != 0 ) stop("error: n must an integer")
+                  
+                  pass <- TRUE
+                  
+                  return(pass)
+          }
+  
+        if(validate(v,n))
+        {         
+              
+                  output = list()
+        
+                  v.sort <- sort(v,decreasing = TRUE)
+                  
+                  for(i in 1:n)
+                  {    
+                            output <- list(output,c( v.sort[i], v[n + i]))
+                  }
+        
+                  return(output)
+        }
+  
+
+
+}
+
+```
+**Example 1.1**
+This should produce a valid result.
+```{r echo=TRUE}
+
+v <- c(30,90,15,11,99,12,15,16)
+n <- 4
+print(orderFcn(v,n))
+
+```
+
+**Example 1.2**
+This should return an error because **N** is assumed to a positive integer.  
+```{r error=TRUE}
+v <- c(30,90,15,11,99,12,15,16)
+n <- -4
+print(orderFcn(v,n))
+```
+*Example 1.3*
+This should produce an error because n must be an integer. 
+```{r error=TRUE}
+v <- c(30,90,15,11,99,12,15,16,23,31,22,34)
+n <- 5.8
+print(orderFcn(v,n))
+```
+
+2. Given a vector of integers, V.Ints, of size N, write a function that looks for any duplicate occurrences of the set of integers and returns a vector of those unique integers with at least 2 occurrences.  The output should return both the unique values and the number of occurrences in a data frame.
+
+SOLUTION:
+
+```{r}
+getDuplicates <- function(v)
+{
+  
+          validate <- function (v)
+          {
+                  pass <- FALSE
+                  
+                  for(i in 1:length(v)) 
+                  {
+                          if( v[i]%%1 != 0 ) stop("error: n must be an integer")
+                  }
+                  
+                  pass <- TRUE
+                  
+                  return(pass)
+          }
+  
+        if(validate(v))
+        {         
+                  t <- table(v)
+                  s <- subset(t,t>1)
+                  st <- t(s) # transponse s
+                  df <- data.frame(st)
+                  names(df) <- gsub("X","",names(df)) # remove useless characters
+                  return(df)
+        }
+
+}
+
+```
+**Example 2.1**
+This should return a data frame with duplicates and a count of each.
+``` {r echo=TRUE}
+ v <- sample(1:200, 100, replace = TRUE)
+ getDuplicates(v)
+```
+**Example 2.1**
+This should return a data frame with 0 columns.
+``` {r echo=TRUE}
+ v <- sample(1:1000, 100, replace = FALSE)
+ getDuplicates(v)
+
+```
+
+3. Given a vector of dates, V.dates, write a function that determines the time, in days, from present day for each element.  Next determine the quarter, as defined by 91 day segments, from present day in reverse chronological order.  Define quarter '0' to be the time between present day and (present day - 91), quarter '1' to be (present day - 91) to (present day - 182), etc. Lastly, return a data frame that contains the original date, the duration from present day, and the quarter to which the date belongs.  Keep in mind that dates may be before or after present day.  For example, assuming present day is '10/27/2010' and an input date of '6/20/2009', the function should return that the input date is 494 days from present day and belongs in quarter 5.
+
+**Assumptions**
+
+1. Quarters after the present date are allowed to be negative since quarters prior are positive.
+
+2. The system date is assumed to represent the current date.
+
+SOLUTION:
+
+First create a function that produces a random date. We will use this for testing for later on.
+```{r echo=FALSE}
+randomDate <- function() {
+      s <- sample(-1000:1000,1,replace=FALSE)
+      r <- Sys.Date() + s
+      return(r)
+  }
+```
+
+And now the function is defined
+``` {r echo=FALSE}
+countDays <- function(orig)
+{       
+        dateFormat <- "%Y-%m-%d"
+        present <- as.Date(as.character(Sys.Date()), format=dateFormat)
+        o <- vector('numeric')
+        class(o) <- "Date"
+        q <- vector('numeric')
+        d <- vector('numeric')
+        
+        for(i in 1:length(orig))
+        {
+                o[i] <-  as.Date(as.character(orig[i]), format=dateFormat)
+                d[i] <-  floor(difftime(present,orig[i],units="days")) + 1
+                q[i] <-  as.integer(floor(d[i]/91))
+          
+        }
+              
+        df <- data.frame(OriginalDate = o, DurationFromPresentDay = d, Quarter = q)
+        return(df)
+}
+
+```
+**Example 3.1**
+This should produce quarter 0 if this is run in December of 2014
+``` {r echo=TRUE}
+d <- "2014-12-01"
+print(countDays(d))
+```
+
+**Example 3.2**
+This should produce a negative quarter (-4) based on the assumptions.
+``` {r echo=TRUE}
+d <- "2015-12-07"
+print(countDays(d))
+```
+
+**Example 3.3**
+This should produce a data frame with 20 results based on random dates.
+``` {r echo=TRUE}
+for(i in 1:20) { d[i] <- as.character(randomDate(),format="%Y-%m-%d") }
+print(countDays(d))
+```
+
+4. Given a vector of text strings, V.text, write a function that extracts likely dollar amounts and dates from each string and returns them as separate vector components of a list of the same length as V.text.  Amounts and dates should be returned as text strings with the exact same format as the input.  For example, if one of the input strings is "Listed on 1/05/2009 for 180000 and sold for $150,250 on 3/1/2009", the output for that element should be a list containing two vectors, one for amounts and one for dates. The amounts should be "180000" and "$150,250" and the dates should be "1/05/2009" and "3/1/2009".
+
+Solution:
+
+**Assumptions**
+
+1. Dollar ammounts are in the thousands
+
+2. The dates entered by the user are real dates (no leap year errors, no June 31st, etc.)
+
+3. When a dollar sign is used then a comma will also be used
+
+``` {r echo=TRUE}
+    library(stringr)
+
+makeList <- function(s)
+{           
+            lappend <- function(lst, obj) # Acknowledgment http://bit.ly/1C1Duvk
+            {
+                    lst[[length(lst)+1]] <- obj
+                    return(lst)
+            }
+            
+            output <- list()
+            
+            dateRegex <- "*([0-9]+/[0-9]+/[0-9]{4})"
+            priceRegex <-"*(\\s\\d{3,})|*(\\$\\d{1,3}(,\\d{1,3})+)"
+            output <- c()
+            length(output) <- length(s)
+            for(i in 1:length(s))
+            {
+                        dates <- unlist(str_extract_all(s, dateRegex))
+                        prices <- unlist(str_extract_all(s,priceRegex))
+                        l <- list(dates,prices)
+                        output <- lappend(output,l)
+            }
+            
+            return(output)
+}
+
+
+```
+**Example 4.1**
+This should print what is outlined in question 4.
+```{r}
+ s <- c("Listed on 1/05/2009 for 180000 and sold for $150,250 on 3/1/2009")
+ print(makeList(s))
+````
+**Example 4.2**
+This should extract "1/1/2000" "9/9/9999","99999999999" & "$9,000" 
+```{r}
+ s <- c("Listed on 1/1/2000 for 99999999999 and sold for $9,000 on 9/9/9999")
+ print(makeList(s))
+````
+**Example 4.3**
+This should extract list(c("1/01/2014","2/1/2014"), c("$18,000","$19,000")) and 
+list(c("2/01/2014","2/2/2014"),c("$100,000" "$105,000")).
+```{r}
+ s <- c("Listed on 1/01/2014 for $18,000 and sold for $19,000 on 2/1/2014","Listed on 2/01/2014 for $100,000 and sold for $105,000 on 2/2/2014")
+ print(makeList(s))
+```
+
+Questions or comments can be sent to mark.rios@cal.berkeley.edu.
